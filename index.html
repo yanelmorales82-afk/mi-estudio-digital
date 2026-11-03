@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mi Estudio Digital</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f7f4ef;color:#39342e;font-family:Arial,sans-serif}
+header{background:#39342e;color:#e8d5ad;padding:25px 20px}
+header h1{margin:0;font-size:25px}
+header p{margin:7px 0 0;color:#eee2ce;font-size:13px}
+nav{display:flex;gap:8px;overflow:auto;padding:12px;background:#fff}
+nav button{border:0;background:#eee8df;padding:12px;border-radius:9px;white-space:nowrap}
+nav button.active{background:#a58a5e;color:white}
+main{padding:18px;max-width:850px;margin:auto}
+h2{font-size:20px}
+.panel{background:white;border-radius:13px;padding:17px;margin-bottom:15px;box-shadow:0 2px 8px #00000009}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:#fff;border-radius:12px;padding:17px}
+.stat small{color:#777}
+.stat strong{display:block;font-size:22px;margin-top:8px}
+input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin:6px 0 13px;font-size:15px}
+label{font-size:13px;font-weight:bold}
+.action{background:#8f754e;color:white;border:0;border-radius:8px;padding:12px 18px;width:100%;font-size:15px}
+.item{padding:13px 0;border-bottom:1px solid #eee;font-size:14px}
+.item strong{display:block;margin-bottom:5px}
+.muted{color:#777;font-size:12px}
+.danger{color:#b34d43}
+.hidden{display:none}
+footer{text-align:center;color:#999;padding:25px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+<h1>Mi Estudio Digital</h1>
+<p>Administración inteligente de tu negocio</p>
+</header>
+<nav>
+<button class="active" onclick="show('inicio',this)">Inicio</button>
+<button onclick="show('clientes',this)">Clientes</button>
+<button onclick="show('ventas',this)">Ventas</button>
+<button onclick="show('gastos',this)">Gastos</button>
+</nav>
+<main>
+
+<section id="inicio">
+<h2>Resumen de mi negocio</h2>
+<div class="stats">
+<div class="stat"><small>Ventas registradas</small><strong id="totalVentas">$0</strong></div>
+<div class="stat"><small>Dinero cobrado</small><strong id="totalCobrado">$0</strong></div>
+<div class="stat"><small>Deudas pendientes</small><strong id="totalDeuda">$0</strong></div>
+<div class="stat"><small>Gastos registrados</small><strong id="totalGastos">$0</strong></div>
+</div>
+<div class="panel" style="margin-top:15px">
+<h3>Dinero disponible (cobros menos gastos)</h3>
+<strong id="ganancia">$0</strong>
+</div>
+<div class="panel">
+<h3>Próximos vencimientos</h3>
+<div id="vencimientos"></div>
+</div>
+</section>
+
+<section id="clientes" class="hidden">
+<h2>Mis clientes</h2>
+<div class="panel">
+<label>Nombre del cliente</label>
+<input id="clienteNombre" placeholder="Nombre y apellido">
+<label>Teléfono</label>
+<input id="clienteTelefono" placeholder="Número de teléfono">
+<button class="action" onclick="agregarCliente()">Guardar cliente</button>
+</div>
+<div class="panel"><h3>Lista de clientes</h3><div id="listaClientes"></div></div>
+</section>
+
+<section id="ventas" class="hidden">
+<h2>Ventas y pedidos Natura</h2>
+<div class="panel">
+<label>Cliente</label>
+<select id="ventaCliente"></select>
+<label>Producto o pedido</label>
+<input id="producto" placeholder="Nombre del producto">
+<label>Precio de venta ($)</label>
+<input id="precio" type="number" min="0">
+<label>Dinero recibido ($)</label>
+<input id="pagado" type="number" min="0" value="0">
+<label>Fecha del pedido</label>
+<input id="fechaPedido" type="date">
+<button class="action" onclick="agregarVenta()">Registrar venta</button>
+</div>
+<div class="panel"><h3>Mis ventas</h3><div id="listaVentas"></div></div>
+</section>
+
+<section id="gastos" class="hidden">
+<h2>Control de gastos</h2>
+<div class="panel">
+<label>Descripción del gasto</label>
+<input id="descripcionGasto" placeholder="Ej. Compra de mercadería">
+<label>Importe ($)</label>
+<input id="importeGasto" type="number" min="0">
+<label>Fecha</label>
+<input id="fechaGasto" type="date">
+<button class="action" onclick="agregarGasto()">Guardar gasto</button>
+</div>
+<div class="panel"><h3>Mis gastos</h3><div id="listaGastos"></div></div>
+</section>
+
+</main>
+<footer>Mi Estudio Digital · Tu negocio, organizado</footer>
+
+<script>
+const leer = (k) => JSON.parse(localStorage.getItem(k)||"[]");
+const guardar = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+let clientes=leer("med_clientes");
+let ventas=leer("med_ventas");
+let gastos=leer("med_gastos");
+const dinero = n => "$"+Number(n||0).toLocaleString("es-AR");
+
+function show(id,btn){
+document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+actualizar();
+}
+
+function agregarCliente(){
+let nombre=document.getElementById("clienteNombre").value.trim();
+let telefono=document.getElementById("clienteTelefono").value.trim();
+if(!nombre){alert("Escribí el nombre del cliente");return}
+clientes.push({id:Date.now(),nombre,telefono});
+guardar("med_clientes",clientes);
+document.getElementById("clienteNombre").value="";
+document.getElementById("clienteTelefono").value="";
+actualizar();
+}
+
+function agregarVenta(){
+let clienteId=Number(document.getElementById("ventaCliente").value);
+let cliente=clientes.find(c=>c.id===clienteId);
+let producto=document.getElementById("producto").value.trim();
+let precio=Number(document.getElementById("precio").value);
+let pagado=Number(document.getElementById("pagado").value);
+let fecha=document.getElementById("fechaPedido").value;
+if(!cliente||!producto||precio<=0||pagado<0||pagado>precio||!fecha){
+alert("Completá los datos correctamente. El pago no puede superar el precio.");return;
+}
+let vencimiento=new Date(fecha+"T12:00:00");
+vencimiento.setDate(vencimiento.getDate()+20);
+ventas.push({
+id:Date.now(),clienteId,cliente:cliente.nombre,producto,
+precio,pagado,fecha,
+vencimiento:vencimiento.toISOString().slice(0,10)
+});
+guardar("med_ventas",ventas);
+document.getElementById("producto").value="";
+document.getElementById("precio").value="";
+document.getElementById("pagado").value="0";
+actualizar();
+alert("¡Venta registrada!");
+}
+
+function registrarPago(id){
+let v=ventas.find(x=>x.id===id);
+let deuda=v.precio-v.pagado;
+let pago=Number(prompt("Deuda actual: "+dinero(deuda)+"\n¿Cuánto pagó el cliente?"));
+if(!pago||pago<=0||pago>deuda){alert("Importe no válido");return}
+v.pagado+=pago;
+guardar("med_ventas",ventas);
+actualizar();
+}
+
+function agregarGasto(){
+let descripcion=document.getElementById("descripcionGasto").value.trim();
+let importe=Number(document.getElementById("importeGasto").value);
+let fecha=document.getElementById("fechaGasto").value;
+if(!descripcion||importe<=0||!fecha){alert("Completá todos los datos");return}
+gastos.push({id:Date.now(),descripcion,importe,fecha});
+guardar("med_gastos",gastos);
+document.getElementById("descripcionGasto").value="";
+document.getElementById("importeGasto").value="";
+actualizar();
+}
+
+function actualizar(){
+guardar("med_clientes",clientes);
+guardar("med_ventas",ventas);
+guardar("med_gastos",gastos);
+document.getElementById("ventaCliente").innerHTML=
+'<option value="">Seleccionar cliente</option>'+
+clientes.map(c=><option value="${c.id}">${esc(c.nombre)}</option>).join("");
+
+let total=ventas.reduce((s,v)=>s+v.precio,0);
+let cobrado=ventas.reduce((s,v)=>s+v.pagado,0);
+let deuda=total-cobrado;
+let egresos=gastos.reduce((s,g)=>s+g.importe,0);
+document.getElementById("totalVentas").textContent=dinero(total);
+document.getElementById("totalCobrado").textContent=dinero(cobrado);
+document.getElementById("totalDeuda").textContent=dinero(deuda);
+document.getElementById("totalGastos").textContent=dinero(egresos);
+document.getElementById("ganancia").textContent=dinero(cobrado-egresos);
+
+document.getElementById("listaClientes").innerHTML=clientes.map(c=>
+<div class="item"><strong>${esc(c.nombre)}</strong>${esc(c.telefono||"Sin teléfono")}</div>
+).join("")||"Todavía no hay clientes.";
+
+document.getElementById("listaVentas").innerHTML=ventas.map(v=>{
+let saldo=v.precio-v.pagado;
+return `<div class="item">
+<strong>${esc(v.producto)} · ${esc(v.cliente)}</strong>
+Precio: ${dinero(v.precio)} · Pagó: ${dinero(v.pagado)}<br>
+<span class="${saldo>0?'danger':''}">Pendiente: ${dinero(saldo)}</span><br>
+<span class="muted">Vence: ${v.vencimiento}</span>
+${saldo>0?<p><button onclick="registrarPago(${v.id})">Registrar pago</button></p>:"<span>Pagado</span>"}
+</div>`}).join("")||"Todavía no hay ventas.";
+
+document.getElementById("listaGastos").innerHTML=gastos.map(g=>
+<div class="item"><strong>${esc(g.descripcion)}</strong>${dinero(g.importe)} · ${g.fecha}</div>
+).join("")||"Todavía no hay gastos.";
+
+document.getElementById("vencimientos").innerHTML=ventas
+.filter(v=>v.precio>v.pagado)
+.sort((a,b)=>a.vencimiento.localeCompare(b.vencimiento))
+.map(v=><div class="item"><strong>${esc(v.cliente)} · ${dinero(v.precio-v.pagado)}</strong><span class="muted">${v.producto} · Vence ${v.vencimiento}</span></div>)
+.join("")||"No hay deudas pendientes.";
+}
+
+function esc(s){
+return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+actualizar();
+</script>
+</body>
+</html>
