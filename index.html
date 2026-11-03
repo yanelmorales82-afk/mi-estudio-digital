@@ -116,14 +116,26 @@ let clientes=leer("med_clientes");
 let ventas=leer("med_ventas");
 let gastos=leer("med_gastos");
 const dinero = n => "$"+Number(n||0).toLocaleString("es-AR");
-
 function show(id,btn){
-document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
-document.getElementById(id).classList.remove("hidden");
-document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
-btn.classList.add("active");
-actualizar();
+  document.querySelectorAll("main section").forEach(s=>{
+    s.classList.add("hidden");
+  });
+const pantalla = document.getElementById(id);
+  if(pantalla){
+    pantalla.classList.remove("hidden");
+  }
+
+  document.querySelectorAll("nav button").forEach(b=>{
+    b.classList.remove("active");
+  });
+
+  if(btn){
+    btn.classList.add("active");
+  }
+
+  actualizar();
 }
+
 
 function agregarCliente(){
 let nombre=document.getElementById("clienteNombre").value.trim();
